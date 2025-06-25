@@ -30,6 +30,7 @@ after_initialize do
       end
 
       if receiver_in_list and (type != :mailing_list or allow_maillist)
+        message.perform_deliveries = false
         message.delivery_method.settings[:authentication] = SiteSetting.discourse_another_email_smtp_authentication_mode
         message.delivery_method.settings[:address] = SiteSetting.discourse_another_email_smtp_address
         message.delivery_method.settings[:port] = SiteSetting.discourse_another_email_smtp_port
