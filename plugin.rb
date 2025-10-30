@@ -10,38 +10,30 @@
 enabled_site_setting :discourse_another_email_enabled
 
 after_initialize do
-  
-  DiscourseEvent.on(:before_email_send) do |*params|
 
+  # Bypass email delivery for specific recipients
+  DiscourseEvent.on(:bypass_email_delivery) do |*params|
     if SiteSetting.discourse_another_email_enabled
-  
       message, type = *params
 
       receiver_in_list = false
-      allow_maillist = false
-      
+
       message&.to&.each do |address|
         SiteSetting.discourse_another_email_enabling_mails.split('|').each do |addr|
           receiver_in_list = true if address.include? addr
         end
-        SiteSetting.discourse_another_email_maillist_allowing_emails.split('|').each do |addr|
-          allow_maillist = true if address.include? addr
-        end
       end
 
-      if receiver_in_list and (type != :mailing_list or allow_maillist)
-        message.perform_deliveries = false
-        message.delivery_method.settings[:authentication] = SiteSetting.discourse_another_email_smtp_authentication_mode
-        message.delivery_method.settings[:address] = SiteSetting.discourse_another_email_smtp_address
-        message.delivery_method.settings[:port] = SiteSetting.discourse_another_email_smtp_port
-        message.delivery_method.settings[:password] = SiteSetting.discourse_another_email_smtp_password
-        message.delivery_method.settings[:user_name] = SiteSetting.discourse_another_email_smtp_username
+      # Return true to bypass delivery for these recipients
+      if receiver_in_list
+        next true # This will prevent the email from being sent
       end
     end
-  
+
+    false # Return false to allow normal delivery
   end
-      
-  
+
+
 end
 
 # message.delivery_method.settings is like:
